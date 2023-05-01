@@ -13,3 +13,4 @@ RUN apt-get install -y vim less
 RUN echo "set clipboard=unnamed,autoselect" > /root/.vimrc
 RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
+RUN pip install fastapi[all]
