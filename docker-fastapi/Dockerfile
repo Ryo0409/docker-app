@@ -11,6 +11,8 @@ ENV TERM xterm
 
 RUN apt-get install -y vim less
 RUN echo "set clipboard=unnamed,autoselect" > /root/.vimrc
+RUN apt-get install -y sqlite3
 RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
 RUN pip install fastapi[all]
+RUN pip install sqlalchemy
