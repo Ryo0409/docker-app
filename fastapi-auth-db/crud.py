@@ -29,7 +29,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def get_items(db: Session, user_id: int):
-    return db.query(models.Item).filter(models.Item.user_id == user_id)
+    return db.query(models.Item).filter(models.Item.owner_id == user_id)
 
 
 def create_item(db: Session, Item: schemas.ItemCreate, user_id: int):
