@@ -28,13 +28,31 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def get_items(db: Session, user_id: int):
-    return db.query(models.Item).filter(models.Item.owner_id == user_id).all()
+def get_notes(db: Session, user_id: int):
+    return db.query(models.Note).filter(models.Note.owner_id == user_id).all()
 
 
-def create_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), owner_id=user_id)
-    db.add(db_item)
+def get_note(db: Session, user_id: int, id: int):
+    return db.query(models.Note).filter(models.Note.owner_id == user_id).filter(models.Note.id == id).first()
+
+
+def create_note(db: Session, note: schemas.NoteCreate, user_id: int):
+    db_note = models.Note(**note.dict(), owner_id=user_id)
+    db.add(db_note)
     db.commit()
-    db.refresh(db_item)
-    return db_item
+    db.refresh(db_note)
+    return db_note
+
+
+def delete_note(db: Session, original: models.Note) -> None:
+    db.delete(original)
+    db.commit()
+
+
+def update_note(db: Session, new: schemas.NoteCreate, original: models.Note):
+    original.title = new.title
+    original.description = new.description
+    db.add(original)
+    db.commit()
+    db.refresh(original)
+    return original
