@@ -18,6 +18,8 @@ services:
     image: fastapi-myapp:latest
     restart: always
     container_name: 'app'
+    environment:
+      DATABASE_HOST: "mysql://root@db:3306/test?charset=utf8"
     tty: true
     networks:
       - fastapi_net
