@@ -1,15 +1,16 @@
 from pydantic import BaseModel
 
 
-class ItemBase(BaseModel):
-    name: str
+class NoteBase(BaseModel):
+    title: str
+    description: str
 
 
-class ItemCreate(ItemBase):
+class NoteCreate(NoteBase):
     pass
 
 
-class Item(ItemBase):
+class Note(NoteBase):
     id: int
     owner_id: int
 
