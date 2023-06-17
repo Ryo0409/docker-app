@@ -97,6 +97,16 @@ Resources:
           Ebs:
             VolumeType: gp2
             VolumeSize: '30'
+      UserData: !Base64 |
+        #!/bin/bash -x
+        sudo yum update -y
+        sudo yum install -y python-pip
+        sudo pip install boto boto3 botocore
+        sudo amazon-linux-extras enable ansible2
+        sudo yum install -y ansible
+        sudo ansible-galaxy collection install ansible.posix
+        sudo ansible-galaxy collection install community.general
+        sudo yum install -y git
   # Security Group
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
