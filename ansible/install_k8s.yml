@@ -3,7 +3,7 @@
 
   vars:
     ansible_user: ec2-user
-    ansible_ssh_private_key_file: ~/.ssh/.pem
+    ansible_ssh_private_key_file: ~/.ssh/<>.pem
 
   tasks:
     - name: Add the br_netfilter module
@@ -148,9 +148,20 @@
       when: '"controller" in group_names'
 
     - name: Check if control plane node is active
-      shell: kubectl get node --no-headers | awk '{print $2}'
+      shell: kubectl get node --no-headers | grep control-plane | awk '{print $2}'
       register: node_state
       until: node_state.stdout == "Ready"
       retries: 10
       delay: 5
       when: '"controller" in group_names'
+
+    - name: Get command for add nodes to kubernetes cluster
+      shell: kubeadm token create --print-join-command
+      register: k8s_join_command
+      when: '"controller" in group_names'
+
+    - name: Add wokers to kubernetes cluster
+      shell:
+        cmd: "{{ hostvars[groups.controller[0]].k8s_join_command.stdout }}"
+      become: true
+      when: '"worker" in group_names'
