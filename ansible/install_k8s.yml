@@ -3,7 +3,7 @@
 
   vars:
     ansible_user: ec2-user
-    ansible_ssh_private_key_file: ~/.ssh/<>.pem
+    ansible_ssh_private_key_file: ~/.ssh/ec2.pem
 
   tasks:
     - name: Add the br_netfilter module
@@ -130,9 +130,8 @@
         path: "/home/ec2-user/.kube/"
         state: directory
       become: true
-      when: '"controller" in group_names'
 
-    - name: Copy kubernetes admin file to ec2-user home directory
+    - name: Copy kubernetes admin file to ec2-user home directory of controller
       copy:
         src: /etc/kubernetes/admin.conf
         dest: /home/ec2-user/.kube/config
@@ -142,15 +141,32 @@
       become: true
       when: '"controller" in group_names'
 
+    - name: Fetch the k8s admin file
+      fetch:
+        src: /home/ec2-user/.kube/config
+        dest: /tmp/config
+        flat: yes
+      become: true
+      when: '"controller" in group_names'
+
+    - name: Copy kubernetes admin file to ec2-user home directory of wokers
+      copy:
+        src: /tmp/config
+        dest: /home/ec2-user/.kube/config
+        owner: ec2-user
+        group: ec2-user
+      become: true
+      when: '"worker" in group_names'
+
     - name: Install flannel cni
       shell:
         cmd: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
       when: '"controller" in group_names'
 
     - name: Check if control plane node is active
-      shell: kubectl get node --no-headers | grep control-plane | awk '{print $2}'
-      register: node_state
-      until: node_state.stdout == "Ready"
+      shell: kubectl get node --no-headers | grep $(hostname) | awk '{print $2}'
+      register: controller_state
+      until: controller_state.stdout == "Ready"
       retries: 10
       delay: 5
       when: '"controller" in group_names'
@@ -160,8 +176,24 @@
       register: k8s_join_command
       when: '"controller" in group_names'
 
+    - name: Check if woker node is active
+      shell: kubectl get node --no-headers | grep $(hostname) | awk '{print $2}'
+      register: worker_active_flag
+      ignore_errors: yes
+      when: '"worker" in group_names'
+
     - name: Add wokers to kubernetes cluster
       shell:
         cmd: "{{ hostvars[groups.controller[0]].k8s_join_command.stdout }}"
       become: true
+      when:
+        - '"worker" in group_names'
+        - '"Ready" not in worker_active_flag.stdout'
+
+    - name: Check if woker node is active
+      shell: kubectl get node --no-headers | grep $(hostname) | awk '{print $2}'
+      register: worker_state
+      until: worker_state.stdout == "Ready"
+      retries: 10
+      delay: 5
       when: '"worker" in group_names'
