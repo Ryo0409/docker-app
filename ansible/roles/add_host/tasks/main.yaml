@@ -1,0 +1,28 @@
+---
+
+- name: Get command for add nodes to kubernetes cluster
+  shell: kubeadm token create --print-join-command
+  register: k8s_join_command
+  when: '"controller" in group_names'
+
+- name: Check if woker node is active
+  shell: kubectl get node --no-headers | grep $(hostname) | awk '{print $2}'
+  register: worker_active_flag
+  ignore_errors: yes
+  when: '"worker" in group_names'
+
+- name: Add wokers to kubernetes cluster
+  shell:
+    cmd: "{{ hostvars[groups.controller[0]].k8s_join_command.stdout }}"
+  become: true
+  when:
+    - '"worker" in group_names'
+    - '"Ready" not in worker_active_flag.stdout'
+
+- name: Check if woker node is active
+  shell: kubectl get node --no-headers | grep $(hostname) | awk '{print $2}'
+  register: worker_state
+  until: worker_state.stdout == "Ready"
+  retries: 10
+  delay: 5
+  when: '"worker" in group_names'
