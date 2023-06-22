@@ -29,7 +29,6 @@
   shell:
     cmd: kubectl cluster-info
   failed_when: no
-      #  ignore_errors: yes
   register: k8s_cluster_running_flag
   when: '"controller" in group_names'
 
