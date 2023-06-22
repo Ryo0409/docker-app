@@ -1,0 +1,79 @@
+---
+- name: Add the br_netfilter module
+  modprobe:
+    name: br_netfilter
+    state: present
+  become: true
+
+- name: Set the kernel parameter net.bridge.bridge-nf-call-ip6tables
+  sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/k8s.conf
+  become: true
+
+- name: Set the kernel parameter net.bridge.bridge-nf-call-iptables
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/k8s.conf
+  become: true
+
+- name: Check the swap state
+  shell:
+    cmd : swapon -v
+  register: swap_state
+  check_mode: false
+  changed_when: false
+  become: true
+
+- name: Set the swap off
+  shell:
+    cmd: swapoff -a
+  when: swap_state.stdout != ''
+  become: true
+
+- name: Install dependency packages for docker
+  yum:
+    name:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+    state: present
+  become: true
+
+- name: Install docker
+  shell:
+    cmd: amazon-linux-extras install -y docker
+  become: true
+
+- name: Enable the docker daemon and start
+  systemd:
+    name: docker.service
+    state: started
+    enabled: true
+  become: true
+
+- name: Add the ec2-user to docker group
+  user:
+    name: ec2-user
+    group: docker
+  become: true
+
+- name: Put SELinux in permissive mode
+  shell:
+    cmd: setenforce 0
+  register: result
+  failed_when: 'result.stderr != "setenforce: SELinux is disabled"'
+  become: true
+
+- name: Change selinux setting file
+  shell:
+    cmd: sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+  become: true
