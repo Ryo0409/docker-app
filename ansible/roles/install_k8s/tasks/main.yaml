@@ -1,0 +1,88 @@
+---
+
+- name: Add the repository for kubernetes
+  yum_repository:
+    name: Kubernetes
+    file: kubernetes
+    description: repository for kuberenetes
+    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+    gpgcheck: false
+    repo_gpgcheck: false
+  become: true
+
+- name: Install packages for kubernetes
+  yum:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+  become: true
+
+- name: Enable the kubelet
+  systemd:
+    name: kubelet.service
+    enabled: true
+  become: true
+
+- name: Check if kubernetes cluster already running
+  shell:
+    cmd: kubectl cluster-info
+  failed_when: no
+      #  ignore_errors: yes
+  register: k8s_cluster_running_flag
+  when: '"controller" in group_names'
+
+- name: Run kubernetes cluster
+  shell:
+    cmd: kubeadm init --apiserver-advertise-address $(hostname -i) --pod-network-cidr=10.244.0.0/16
+  become: true
+  when:
+    - '"controller" in group_names'
+    - k8s_cluster_running_flag.rc != 0
+
+- name: Create directory for kubernetes admin file
+  file:
+    path: "/home/ec2-user/.kube/"
+    state: directory
+  become: true
+
+- name: Copy kubernetes admin file to ec2-user home directory of controller
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ec2-user/.kube/config
+    owner: ec2-user
+    group: ec2-user
+    remote_src: yes
+  become: true
+  when: '"controller" in group_names'
+
+- name: Fetch the k8s admin file
+  fetch:
+    src: /home/ec2-user/.kube/config
+    dest: /tmp/config
+    flat: yes
+  become: true
+  when: '"controller" in group_names'
+
+- name: Copy kubernetes admin file to ec2-user home directory of wokers
+  copy:
+    src: /tmp/config
+    dest: /home/ec2-user/.kube/config
+    owner: ec2-user
+    group: ec2-user
+  become: true
+  when: '"worker" in group_names'
+
+- name: Install flannel cni
+  shell:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  when: '"controller" in group_names'
+
+- name: Check if control plane node is active
+  shell: kubectl get node --no-headers | grep $(hostname) | awk '{print $2}'
+  register: controller_state
+  until: controller_state.stdout == "Ready"
+  retries: 10
+  delay: 5
+  when: '"controller" in group_names'
