@@ -9,3 +9,4 @@
     - roles/prepare_host
     - roles/install_k8s
     - roles/add_worker
+    - roles/create_sc
