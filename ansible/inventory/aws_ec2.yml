@@ -8,3 +8,6 @@ filters:
 groups:
   controller: '"controller" in tags.Name'
   worker: '"worker" in tags.Name'
+
+access_key:
+secret_key:
