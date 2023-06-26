@@ -1,0 +1,34 @@
+---
+
+- name: Check if aws iam secret exist
+  shell:
+    cmd: kubectl get secret aws-secret -n kube-system
+  failed_when: no
+  register: k8s_aws_secret_exist_flag
+  when: '"controller" in group_names'
+
+- name: Create aws iam secret
+  shell:
+    cmd: kubectl create secret generic aws-secret --namespace kube-system --from-literal "key_id={{AWS_ACCESS_KEY_ID}}" --from-literal "access_key={{AWS_SECRET_ACCESS_KEY}}"
+  when:
+    - '"controller" in group_names'
+    - k8s_aws_secret_exist_flag.rc != 0
+
+- name: Install driver for aws ebs
+  shell:
+    cmd: 'kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.20"'
+  when: '"controller" in group_names'
+
+- name: Copy storage class manifest file
+  copy:
+    src: sc.yaml
+    dest: /tmp
+    owner: ec2-user
+    group: ec2-user
+  become: true
+  when: '"controller" in group_names'
+
+- name: Create storage class
+  shell:
+    cmd: kubectl apply -f /tmp/sc.yaml
+  when: '"controller" in group_names'
