@@ -20,10 +20,6 @@ Parameters:
     Description: Input a Key name. This Parameter will be a Name tag.
     Type: AWS::EC2::KeyPair::KeyName
   # Number of EC2
-  ControllerNum:
-    Description: Input number of EC2 for Controller.
-    Type: Number
-    Default: 1
   WorkerNum:
     Description: Input number of EC2 for Worker.
     Type: Number
@@ -107,6 +103,7 @@ Resources:
         sudo ansible-galaxy collection install ansible.posix
         sudo ansible-galaxy collection install community.general
         sudo yum install -y git
+        sudo yum install -y jq
   # Security Group
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -132,9 +129,9 @@ Resources:
       VPCZoneIdentifier:
         - !Ref MyPublicSubnet
       LaunchConfigurationName: !Ref MyEC2InstanceConfig
-      MinSize: !Ref ControllerNum
-      MaxSize: !Ref ControllerNum
-      DesiredCapacity: !Ref ControllerNum
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}-ec2-controller"
