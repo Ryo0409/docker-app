@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi
+  labels:
+    app: fastapi
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      imagePullSecrets:
+      - name: mydockerhub
+      containers:
+      - name: fastapi
+        image: ryohata/fastapi
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: zalando.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: zalando.acid-minimal-cluster.credentials.postgresql.acid.zalan.do
+              key: password
+        - name: POSTGRES_SERVER
+          value: acid-minimal-cluster
+        - name: POSTGRES_PORT
+          value: '5432'
+        - name: POSTGRES_DB
+          value: 'foo'
+        ports:
+          - containerPort: 8000
