@@ -22,6 +22,6 @@ RUN pip install fastapi[all]
 RUN pip install sqlalchemy
 RUN pip install python-jose[cryptography]
 RUN pip install passlib[bcrypt]
-RUN pip install mysqlclient
+RUN pip install psycopg2
 
 CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
