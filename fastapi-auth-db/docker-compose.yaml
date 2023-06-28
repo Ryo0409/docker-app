@@ -24,7 +24,6 @@ services:
       POSTGRES_SERVER: 'db'
       POSTGRES_PORT: '5432'
       POSTGRES_DB: 'test'
-      DATABASE_URL: "mysql://root@db:3306/test?charset=utf8"
     tty: true
     networks:
       - fastapi_net
