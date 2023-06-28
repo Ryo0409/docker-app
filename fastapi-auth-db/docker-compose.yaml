@@ -1,24 +1,29 @@
 version: '3'
 services:
   db:
-    image: mysql:8.0
+    image: postgres:15
     restart: always
     container_name: 'db'
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-      MYSQL_DATABASE: 'test'
+      POSTGRES_USER: 'test'
+      POSTGRES_PASSWORD: 'secret'
+      POSTGRES_DB: 'test'
     volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - fastapi_net
     ports:
-      - 33306:3306
+      - 5432:5432
   app:
     image: fastapi-myapp:latest
     restart: always
     container_name: 'app'
     environment:
+      POSTGRES_USER: 'test'
+      POSTGRES_PASSWORD: 'secret'
+      POSTGRES_SERVER: 'db'
+      POSTGRES_PORT: '5432'
+      POSTGRES_DB: 'test'
       DATABASE_URL: "mysql://root@db:3306/test?charset=utf8"
     tty: true
     networks:
@@ -28,8 +33,8 @@ services:
     depends_on:
       - 'db'
 volumes:
-  mysql_data:
-    name: 'mysql_data'
+  postgres_data:
+    name: 'postgres_data'
 networks:
   fastapi_net:
     name: 'fastapi_net'
