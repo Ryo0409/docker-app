@@ -3,8 +3,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-#SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL")
+
+POSTGRES_USER = os.environ.get('POSTGRES_USER')
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+POSTGRES_SERVER = os.environ.get('POSTGRES_SERVER')
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT')
+POSTGRES_DB = os.environ.get('POSTGRES_DB')
+
+SQLALCHEMY_DATABASE_URL = "postgresql://{0}:{1}@{2}:{3}/{4}".format(
+    POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_SERVER, POSTGRES_PORT, POSTGRES_DB
+)
 
 #engine = create_engine(
 #    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
